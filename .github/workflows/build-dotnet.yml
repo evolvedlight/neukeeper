@@ -33,38 +33,13 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
-    - name: Set up JDK 17 (for sonar)
-      uses: actions/setup-java@v3
-      with:
-        java-version: 17
-        distribution: microsoft
-    - name: Cache SonarCloud packages
-      uses: actions/cache@v3
-      with:
-        path: ~\sonar\cache
-        key: ${{ runner.os }}-sonar
-        restore-keys: ${{ runner.os }}-sonar
-    - name: Cache SonarCloud scanner
-      id: cache-sonar-scanner
-      uses: actions/cache@v3
-      with:
-        path: .sonar/scanner
-        key: ${{ runner.os }}-sonar-scanner
-        restore-keys: ${{ runner.os }}-sonar-scanner
-    - name: Install SonarCloud scanner
-      if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-      run: |
-        mkdir -p .sonar/scanner
-        dotnet tool update dotnet-sonarscanner --tool-path .sonar/scanner
+        dotnet-version: 10.0.x
     - name: Restore dependencies
       run: dotnet restore
-    - name: Build
+    - name: Build and Pack
       run: |
-        .sonar/scanner/dotnet-sonarscanner begin /k:"evolvedlight_neukeeper" /o:"stephen-brown" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
         VERSION_SUFFIX=$(if [[ "${{ github.event_name }}" == "release" ]]; then echo "${{ github.ref_name }}"; else echo "1.0.${{ github.run_number }}-develop"; fi)
         dotnet pack neukeeper/neukeeper.csproj -p:PackageVersion=$VERSION_SUFFIX /p:Version=$VERSION_SUFFIX --configuration Release --output ${{ env.NuGetDirectory }}
-        .sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
     - name: Upload nuget
       uses: actions/upload-artifact@v4
       with:
@@ -108,14 +83,14 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 10.0.x
     - name: Test with dotnet
-      run: dotnet test --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
+      run: dotnet test --logger trx --results-directory "TestResults-10.0.x"
     - name: Upload dotnet test results
       uses: actions/upload-artifact@v4
       with:
-        name: dotnet-results-${{ matrix.dotnet-version }}
-        path: TestResults-${{ matrix.dotnet-version }}
+        name: dotnet-results-10.0.x
+        path: TestResults-10.0.x
       # Use always() to always run this step to publish test results when there are test failures
       if: ${{ always() }}
   deploy:
